@@ -1,5 +1,10 @@
-/* your beautiful css styling goes here! */
+.gameOver {
+  background: #FF0000;
+}
 
+.gameOn {
+  background: #FFFFFF;
+}
 /* Note: an asteroid image is included in this repo.
 Feel free to use it if you like. */
 

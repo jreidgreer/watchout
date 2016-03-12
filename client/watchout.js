@@ -1,22 +1,53 @@
-var gameOptions = {
-  enemies: d3.range(50),
-  r: 20,
+
+// Stores data for each game
+var gameData = {
+  enemies: d3.range(3),
+  r: 15,
   width: 960,
   height: 500,
   newX: function() {
-    return Math.max(gameOptions.r, Math.random() * (gameOptions.width - gameOptions.r));
+    return Math.max(gameData.r, Math.random() * (gameData.width - gameData.r));
   },
   newY: function() {
-    return Math.max(gameOptions.r, Math.random() * (gameOptions.height - gameOptions.r));
-  }
+    return Math.max(gameData.r, Math.random() * (gameData.height - gameData.r));
+  },
+  cooldown: false,
+  hscore: 0,
+  cscore: 0,
+  numCol: 0
 };
 
+var cleanTick = 0;
+
+//***********************************************************************
+
+var move = function() {
+  svg.selectAll('.enemy')
+    .transition()
+    .attr('cx', function(d) { return gameData.newX(); })
+    .attr('cy', function(d) { return gameData.newY(); })
+    .duration(1000);
+};
+var updateScore = function() {
+  var hscore = d3.select('#hscore').text(gameData.hscore);
+  var cscore = d3.select('#cscore').text(gameData.cscore);
+  var numCol = d3.select('#numCol').text(gameData.numCol);
+};
 
 var svg = d3.select('.board').append('svg')
-  .attr('width', gameOptions.width)
-  .attr('height', gameOptions.height);
+  .attr('width', gameData.width)
+  .attr('height', gameData.height);
 
+var gameOver = function() {
+  svg.transition()
+    .duration(1000)
+    .style('background-color', '#FF0000');
+  svg.transition()
+    .duration(1000)
+    .style('background-color', '#FFFFFF');
+};
 
+//***********************************************************************
 
 var update = function(data) {
   var dragstarted = function(d) {
@@ -33,23 +64,25 @@ var update = function(data) {
   };
 
   var enemy = svg.selectAll('enemy')
-      .data(data);
+    .data(data);
   // ENTER
 
   var player = svg.selectAll('player')
     .data(['player']);
   
+  var force = d3.layout.force().start();
+  
   enemy.enter().append('circle')
-    .attr('cx', function(d) { return gameOptions.newX(); })
-    .attr('cy', function(d) { return gameOptions.newY(); })
-    .attr('r', gameOptions.r)
+    .attr('cx', function(d) { return gameData.newX(); })
+    .attr('cy', function(d) { return gameData.newY(); })
+    .attr('r', gameData.r)
     .attr('fill', 'blue')
     .attr('class', 'enemy');
 
   player.enter().append('circle')
-    .attr('cx', function(d) { return gameOptions.newX(); })
-    .attr('cy', function(d) { return gameOptions.newY(); })
-    .attr('r', gameOptions.r)
+    .attr('cx', function(d) { return gameData.newX(); })
+    .attr('cy', function(d) { return gameData.newY(); })
+    .attr('r', gameData.r)
     .attr('fill', 'green');
 
   var playerDrag = d3.behavior.drag()
@@ -59,71 +92,62 @@ var update = function(data) {
 
   player.call(playerDrag);
 
+
   // ENTER + UPDATE
   // enemy.enemy(function(d) { return d; });
+//  TODO: THERE IS A HOISTING ISSUE HERE< MOVE THIS
+  var collide = function() {
+    var enemyX = parseInt(d3.select(this).attr('cx'));
+    var enemyY = parseInt(d3.select(this).attr('cy'));
 
-  var force = d3.layout.force()
-    //.gravity(0.05)
-    //.charge(function(d, i) { return i ? 0 : -2000; })
-    .nodes(enemy)
-    .size([gameOptions.width, gameOptions.height]); // ??? this could be effed up
+    // convert playerData to board coordinates
+    var playerX = parseInt(player.attr('cx'));
+    var playerY = parseInt(player.attr('cy'));
+
+    // Determine if the difference of the coordinates is less than the desired range
+    var xDiff = Math.abs(enemyX - playerX);
+    var yDiff = Math.abs(enemyY - playerY);
+    var collision = Math.sqrt( (xDiff * xDiff) + (yDiff * yDiff) ) <= gameData.r * 2;
+
+    // if the enemy is within the x and y difference ranges, increase collision count
+    if (collision && !gameData.cooldown) {
+      gameData.numCol++;
+      gameData.cscore > gameData.hscore ? gameData.hscore = gameData.cscore : false;
+      gameData.cscore = 0;
+      gameOver();
+
+      gameData.cooldown = true;
+      setTimeout(function() {
+        gameData.cooldown = false;
+      }, 500);
+    } else {
+      
+    }
+    updateScore();
+    
+  };
 
 
   force.on('tick', function(e) {
-    var q = d3.geom.quadtree(nodes),
-      i = 0,
-      n = nodes.length;
-
-    while (++i < n) {
-      q.visit(collide(nodes[i]));
-    }  // is this nodes or enemy
+    // call collide on each enemy to find out if player & enemy collided
+    enemy.each(collide);
+    force.alpha(.1);
   });
 
-//  TODO: THERE IS A HOISTING ISSUE HERE< MOVE THIS
-  var collide = function(enemy) {
-    var r = gameOptions.radius,  // + ??? this used to add 16, we don't know why
-      nx1 = enemy.x - r,
-      nx2 = enemy.x + r,
-      ny1 = enemy.y - r,
-      ny2 = enemy.y + r;
-
-    return function(quad, x1, y1, x2, y2) {
-      // WTF is Quad???
-      if (quad.point && (quad.point !== enemy)) {
-        var x = enemy.x - quad.point.x,
-          y = enemy.y - quad.point.y,
-          // This is the distance between the center of the enemy and the player
-          l = Math.sqrt(x * x + y * y),
-          // This is the sum of the radii of the enemy and the player
-          r = enemy.radius + quad.point.radius;
-
-        // If the distance between them is less than their radii put together, a collision happens
-        if (l < r) {
-          //TODO: This is where we update our scoreboard 
-          // l = (l - r) / l * .5;
-          // enemy.x -= x *= l;
-          // enemy.y -= y *= l;
-          // quad.point.x += x;
-          // quad.point.y += y;
-        }
-      }
-      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
-    };
-  };
-
   // EXIT
-  enemy.exit().remove();
+  //enemy.exit().remove();
 };
 
-var move = function() {
-  svg.selectAll('.enemy')
-    .transition()
-    .attr('cx', function(d) { return gameOptions.newX(); })
-    .attr('cy', function(d) { return gameOptions.newY(); })
-    .duration(1000);
-};
-
-update(gameOptions.enemies);
+update(gameData.enemies);
 setInterval(function() {
   move();
 }, 1000);
+setInterval(function() {
+  gameData.cscore += 1;
+}, 1000);
+
+
+
+
+
+
