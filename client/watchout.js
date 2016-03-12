@@ -69,38 +69,47 @@ var update = function(data) {
     .size([gameOptions.width, gameOptions.height]); // ??? this could be effed up
 
 
-  force.on("tick", function(e) {
-  var q = d3.geom.quadtree(nodes),
+  force.on('tick', function(e) {
+    var q = d3.geom.quadtree(nodes),
       i = 0,
       n = nodes.length;
 
-  while (++i < n) q.visit(collide(nodes[i]));
+    while (++i < n) {
+      q.visit(collide(nodes[i]));
+    }  // is this nodes or enemy
+  });
 
+//  TODO: THERE IS A HOISTING ISSUE HERE< MOVE THIS
+  var collide = function(enemy) {
+    var r = gameOptions.radius,  // + ??? this used to add 16, we don't know why
+      nx1 = enemy.x - r,
+      nx2 = enemy.x + r,
+      ny1 = enemy.y - r,
+      ny2 = enemy.y + r;
 
-
-  function collide(node) {
-    var r = node.radius + 16,
-        nx1 = node.x - r,
-        nx2 = node.x + r,
-        ny1 = node.y - r,
-        ny2 = node.y + r;
     return function(quad, x1, y1, x2, y2) {
-      if (quad.point && (quad.point !== node)) {
-        var x = node.x - quad.point.x,
-            y = node.y - quad.point.y,
-            l = Math.sqrt(x * x + y * y),
-            r = node.radius + quad.point.radius;
+      // WTF is Quad???
+      if (quad.point && (quad.point !== enemy)) {
+        var x = enemy.x - quad.point.x,
+          y = enemy.y - quad.point.y,
+          // This is the distance between the center of the enemy and the player
+          l = Math.sqrt(x * x + y * y),
+          // This is the sum of the radii of the enemy and the player
+          r = enemy.radius + quad.point.radius;
+
+        // If the distance between them is less than their radii put together, a collision happens
         if (l < r) {
-          l = (l - r) / l * .5;
-          node.x -= x *= l;
-          node.y -= y *= l;
-          quad.point.x += x;
-          quad.point.y += y;
+          //TODO: This is where we update our scoreboard 
+          // l = (l - r) / l * .5;
+          // enemy.x -= x *= l;
+          // enemy.y -= y *= l;
+          // quad.point.x += x;
+          // quad.point.y += y;
         }
       }
-    return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    };
   };
-}
 
   // EXIT
   enemy.exit().remove();
