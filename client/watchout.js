@@ -94,7 +94,7 @@ var update = function(data) {
     .attr('cx', function(d) { return gameData.newX(); })
     .attr('cy', function(d) { return gameData.newY(); })
     .attr('r', gameData.r)
-    .attr('fill', 'green');
+    .attr('fill', '#79BD8F');
 
   var playerDrag = d3.behavior.drag()
       .on('dragstart', dragstarted)
@@ -155,7 +155,7 @@ setInterval(function() {
 }, 1000);
 setInterval(function() {
   gameData.cscore += 1;
-}, 1000);
+}, 500);
 
 
 
