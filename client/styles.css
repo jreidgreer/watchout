@@ -1,3 +1,6 @@
+svg {
+  transition: background-color 0.1s;
+}
 .gameOver {
   background: #FF0000;
 }
@@ -5,6 +8,22 @@
 .gameOn {
   background: #FFFFFF;
 }
+svg {
+  margin: 0px auto;
+  border: 1px solid black;
+}
+
+.enemy {
+  /*background: url('shuriken.png') no-repeat;*/
+  fill: url('#shuriken');
+/*  position: absolute;
+  animation:spin 2s linear infinite;*/
+}
+/*@keyframes spin {
+from { -webkit-transform: rotate(0deg); }
+to { -webkit-transform: rotate(360deg); }
+}*/
+
 /* Note: an asteroid image is included in this repo.
 Feel free to use it if you like. */
 

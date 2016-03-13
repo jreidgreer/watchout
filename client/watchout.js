@@ -17,7 +17,6 @@ var gameData = {
   numCol: 0
 };
 
-var cleanTick = 0;
 
 //***********************************************************************
 
@@ -38,13 +37,25 @@ var svg = d3.select('.board').append('svg')
   .attr('width', gameData.width)
   .attr('height', gameData.height);
 
+var pattern = d3.select('svg').append('defs')
+    .append('pattern')
+      .attr('id', 'shuriken')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('height', '30px')
+      .attr('width', '30px')
+      .append('image')
+        .attr('x', '0')
+        .attr('y', '0')
+        .attr('width', '30px')
+        .attr('height', '30px')
+        .attr('xlink:href', 'shuriken.png');
+
 var gameOver = function() {
-  svg.transition()
-    .duration(1000)
-    .style('background-color', '#FF0000');
-  svg.transition()
-    .duration(1000)
-    .style('background-color', '#FFFFFF');
+  svg.classed({'gameOver': true});
+  setTimeout(function() {
+    svg.classed({'gameOver': false});
+  }, 100);
 };
 
 //***********************************************************************
@@ -76,7 +87,7 @@ var update = function(data) {
     .attr('cx', function(d) { return gameData.newX(); })
     .attr('cy', function(d) { return gameData.newY(); })
     .attr('r', gameData.r)
-    .attr('fill', 'blue')
+    .attr('fill', 'url(#shuriken)')
     .attr('class', 'enemy');
 
   player.enter().append('circle')
